@@ -1,0 +1,67 @@
+#version 330 core
+
+// Interpolated values from the vertex shaders
+in vec2 UV;
+in vec3 Position_worldspace;
+in vec3 Normal_cameraspace;
+in vec3 EyeDirection_cameraspace;
+in vec3 LightDirection_cameraspace;
+in vec4 ShadowCoord;
+
+// Ouput data
+layout(location = 0) out vec4 color;
+
+uniform sampler2D myTextureSampler;
+uniform sampler2D mySpecularSampler;
+uniform sampler2DShadow shadowMap;
+uniform mat4 MV;
+uniform float time;
+
+void main(){
+	
+	int texSamplesX = 4;
+	int texSamplesY = 4;
+	float texDiffuse = 0.002;
+	int shadowSamplesX = 4;
+	int shadowSamplesY = 4;
+	float shadowDiffuse = 0.001;
+	
+	float visibility = 0;
+	for(int x = 0; x < shadowSamplesX; x++){
+		float xf = (float(x + 0.5)/shadowSamplesX) - 0.5;
+		for(int y = 0; y < shadowSamplesY; y++){
+			float yf = (float(y + 0.5)/shadowSamplesY) - 0.5;
+			vec2 r = vec2(xf, yf) * shadowDiffuse;
+			visibility += texture( shadowMap, vec3(ShadowCoord.xy + r, ShadowCoord.z/ShadowCoord.w) );
+		}
+	}
+	visibility /= float(shadowSamplesX * shadowSamplesY);
+	
+	vec3 MaterialDiffuseColor = vec3(0,0,0);
+	vec3 MaterialSpecularColor = vec3(0,0,0);
+	for(int x = 0; x < texSamplesX; x++){
+		float xf = (float(x + 0.5)/texSamplesX) - 0.5;
+		for(int y = 0; y < texSamplesY; y++){
+			float yf = (float(y + 0.5)/texSamplesY) - 0.5;
+			vec2 r = UV + vec2(xf, yf) * texDiffuse;
+			MaterialDiffuseColor += texture2D(myTextureSampler, r).rgb;
+			MaterialSpecularColor += texture2D(mySpecularSampler, r).rgb;
+		}
+	}
+	MaterialDiffuseColor /= float(texSamplesY * texSamplesX);
+	MaterialSpecularColor /= float(texSamplesY * texSamplesX);
+	
+	vec3 n = normalize( Normal_cameraspace );
+	vec3 l = normalize( LightDirection_cameraspace );
+	vec3 e = normalize( EyeDirection_cameraspace );
+	
+	visibility *= clamp( dot( n,l ), 0,1 );
+	float shadowMulti = 0.3 + visibility * 0.7;
+	float specMulti = 0.1 + (pow(clamp( dot( e,reflect(-l,n) ), 0, 1 ), 20) * length(MaterialSpecularColor)) * 0.6;
+	specMulti *= shadowMulti;
+	MaterialDiffuseColor *= shadowMulti;
+	float diffuseMulti = 1.0f - specMulti;
+	
+	color.xyz = MaterialDiffuseColor * diffuseMulti + MaterialSpecularColor * specMulti;
+	color.a = 0.8;
+}
