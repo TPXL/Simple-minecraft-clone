@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 
-public class customPanel extends JPanel implements KeyListener{
+public class CustomPanel extends JPanel implements KeyListener{
 
 	public ArrayList<Edge> edges;
 	public ArrayList<Polygon> polygons;
@@ -32,7 +32,7 @@ public class customPanel extends JPanel implements KeyListener{
 	int x, y;
 	
 	
-	customPanel()
+	CustomPanel()
 	{
 		this.addKeyListener(this);
 		drawVertices = false;
@@ -79,6 +79,12 @@ public class customPanel extends JPanel implements KeyListener{
 
 			int chunkSize = 15;
 			FileWriter mapFiles[][] = new FileWriter[x/chunkSize+1][];
+			
+			File folder = new File("map");
+			if(!folder.exists())
+				folder.mkdir();
+			folder = null;
+			
 			for(int i=0; i < mapFiles.length; i++)
 				mapFiles[i] = new FileWriter[y/chunkSize+1];
 			for(int i=0; i < mapFiles.length; i++)
@@ -86,6 +92,8 @@ public class customPanel extends JPanel implements KeyListener{
 				for(int j=0; j < mapFiles[i].length; j++)
 				{
 					File f = new File("map\\map-" + i + "-" + j + ".txt");
+					if(!f.exists())
+						f.createNewFile();
 					mapFiles[i][j] = new FileWriter(f);
 				}
 			}
@@ -154,7 +162,7 @@ public class customPanel extends JPanel implements KeyListener{
 			{
 				for(int j=0; j < map[0].length; j++)
 				{
-					System.out.println(map[i][j]);
+					//System.out.println(map[i][j]);
 					
 					Polygon cPoly = polygons.get(map[i][j]);
 					mapFiles[i/chunkSize][j/chunkSize].write(i + " " + (cPoly.height>0?cPoly.height:1) + " " + j + " ");
@@ -170,7 +178,7 @@ public class customPanel extends JPanel implements KeyListener{
 						mapFiles[i/chunkSize][j/chunkSize].write(i + " " + k + " " + j + " dirt.jpg\n");
 					mapFiles[i/chunkSize][j/chunkSize].write(i + " " + 0 + " " + j + " bedrock.jpg\n");
 				}
-				System.out.println();
+				//System.out.println();
 			}
 			for(int k=0; k < trees.size(); k++)
 			{
